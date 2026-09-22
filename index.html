@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>行政法 OX 短答式復習システム v1.0</title>
+
+<style>
+body {
+    font-family: -apple-system, "Helvetica Neue", "Segoe UI", sans-serif;
+    background: #f4f6f8;
+    margin: 0;
+    padding: 15px;
+    padding-bottom: 90px; 
+    -webkit-text-size-adjust: 100%;
+}
+
+.top {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+/* 카드 */
+.card {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* タブ */
+.tab {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.tab button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: #ddd;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.tab button.active {
+    background: #2d6cdf;
+    color: white;
+}
+
+/* 入力項目 */
+textarea, input, select {
+    width: 100%;
+    padding: 12px;
+    margin-top: 6px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    font-size: 16px; 
+}
+
+.form-label {
+    font-size: 13px;
+    font-weight: bold;
+    color: #555;
+    margin-top: 10px;
+    display: block;
+}
+
+button {
+    padding: 12px;
+    margin-top: 8px;
+    border: none;
+    border-radius: 8px;
+    background: #2d6cdf;
+    color: white;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* OX용 대형 토글 버튼 선택 */
+.ox-select-wrapper {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+}
+.ox-btn {
+    flex: 1;
+    padding: 12px;
+    background: #f0f0f0;
+    color: #333;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+}
+.ox-btn.selected-o {
+    background: #e1ecf8;
+    color: #2d6cdf;
+    border-color: #2d6cdf;
+}
+.ox-btn.selected-x {
+    background: #fff3f3;
+    color: #d33;
+    border-color: #d33;
+}
+
+/* 問題表示 */
+.question {
+    padding: 12px;
+    border-left: 4px solid #2d6cdf;
+    background: #fafafa;
+    margin-top: 12px;
+    font-size: 15px;
+    line-height: 1.6;
+    position: relative;
+}
+
+.tag-badge {
+    display: inline-block;
+    background: #e1ecf8;
+    color: #2d6cdf;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    margin-right: 5px;
+    margin-top: 5px;
+    font-weight: bold;
+}
+
+/* 시험 화면 안의 OX 선택 버튼 레이아웃 */
+.exam-ox-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+}
+.btn-choice {
+    flex: 1;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background: white;
+    color: #333;
+    cursor: pointer;
+}
+.btn-choice.active-o {
+    background: #2d6cdf !important;
+    color: white !important;
+    border-color: #2d6cdf;
+}
+.btn-choice.active-x {
+    background: #d33 !important;
+    color: white !important;
+    border-color: #d33;
+}
+
+/* 판정 결과 및 해설 박스 */
+.ox-result-box {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+.ox-result-box.correct {
+    background: #e8f8f5;
+    border-left: 4px solid #2cc391;
+    color: #117a65;
+}
+.ox-result-box.wrong {
+    background: #fdf2f2;
+    border-left: 4px solid #ec7063;
+    color: #b03a2e;
+}
+
+.hidden { display: none !important; }
+small { color: gray; font-size: 12px; }
+
+/* DBグループ */
+.group {
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 8px;
+    background: #f9f9f9;
+}
+.group-title {
+    font-weight: bold;
+    font-size: 15px;
+    color: #2d6cdf;
+    margin-bottom: 5px;
+}
+
+/* 下部固定ボタンバー */
+.gradeBar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(5px);
+    padding: 12px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom)); 
+    box-shadow: 0 -3px 15px rgba(0,0,0,0.1);
+    z-index: 999;
+    display: flex;
+    justify-content: center;
+    box-sizing: border-box;
+}
+.gradeBar button {
+    width: 90%;
+    font-size: 16px;
+    padding: 14px;
+    margin-top: 0;
+}
+
+/* モーダル */
+.modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+.modal-content {
+    background: white;
+    width: 90%;
+    max-width: 500px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 20px;
+    border-radius: 12px;
+}
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+.modal-actions button {
+    flex: 1;
+}
+</style>
+</head>
+
+<body>
+
+<div class="top">⚖️ 行政法 OX 短答式復習システム v1.0</div>
+
+<div class="tab">
+<button id="btnDB" class="active">📚 データベース</button>
+<button id="btnExam">🎯 OX試験</button>
+</div>
+
+<div id="dbArea" class="card">
+<h3>📥 OX問題登録</h3>
+<textarea id="qText" rows="4" placeholder="問題の提示文・判例の該当部分を入力してください"></textarea>
+
+<span class="form-label">⭕ 正解の判定</span>
+<div class="ox-select-wrapper">
+    <div id="choiceO" class="ox-btn">⭕</div>
+    <div id="choiceX" class="ox-btn">❌</div>
+</div>
+
+<span class="form-label">💡 解説</span>
+<textarea id="note" rows="3" placeholder="正解・不正解判定の根拠となる解説文"></textarea>
+
+<span class="form-label">🏷️ タグ</span>
+<input id="tags" placeholder="タグ (カンマ(,)で複数入力可)">
+
+<button id="btnAddQ" style="background:#2d6cdf; width:100%; margin-top:15px;">追加する</button>
+<hr>
+<button id="btnToggleDB">📚 登録問題の一覧 表示/非表示</button>
+<div id="dbView" class="hidden"></div>
+</div>
+
+<div id="examArea" class="card hidden">
+<h3>🎯 試験作成</h3>
+
+<div id="randomMode">
+    <span class="form-label">🎯 出題範囲 (タグ選択)</span>
+    <select id="tagSelect"></select>
+    
+    <span class="form-label">📝 出題問題数</span>
+    <input id="count" type="number" pattern="[0-9]*" placeholder="出題問題数">
+    <button id="btnStartRandom" style="width:100%; margin-top:10px;">試験開始</button>
+</div>
+
+<div id="examOut"></div>
+</div>
+
+<div id="examCtrlArea" class="gradeBar hidden">
+    <button id="btnRetryWrong" style="background: #e67e22;">🔁 誤答のみ再出題</button>
+</div>
+
+<div id="editModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h3>✏️ 問題の修正</h3>
+        <textarea id="editQText" rows="4" placeholder="問題文"></textarea>
+        
+        <span class="form-label">正解の判定</span>
+        <div class="ox-select-wrapper">
+            <div id="editChoiceO" class="ox-btn">⭕ O</div>
+            <div id="editChoiceX" class="ox-btn">❌ X</div>
+        </div>
+        
+        <span class="form-label">💡 解説</span>
+        <textarea id="editNote" rows="3" placeholder="解説"></textarea>
+        
+        <span class="form-label">🏷️ タグ</span>
+        <input id="editTags" placeholder="タグ (カンマで区切る)">
+        
+        <div class="modal-actions">
+            <button id="btnCancelEdit" style="background: #95a5a6;">キャンセル</button>
+            <button id="btnSaveEdit" style="background: #27ae60;">保存する</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCXguxQRx0qF0hhPZ0HXRO3gYXea9HJjao",
+    authDomain: "const-slot.firebaseapp.com",
+    projectId: "const-slot",
+    storageBucket: "const-slot.firebasestorage.app",
+    messagingSenderId: "396005964783",
+    appId: "1:396005964783:web:de2fa4d6928b6ab756541a"
+};
+
+const app = initializeApp(firebaseConfig);
+const dbInstance = getFirestore(app);
+
+/* 💡 행정법 OX 전용 데이터베이스 문서 경로 */
+const docRef = doc(dbInstance, "admin_exam", "admin_ox_db_doc");
+
+let db = []; 
+let currentTest = [];
+let userAnswers = {}; 
+let selectedAns = "O"; 
+let editSelectedAns = "O";
+let editingIndex = null; 
+
+onSnapshot(docRef, (docSnap) => {
+    if (docSnap.exists()) {
+        const data = docSnap.data();
+        db = data.questions ? data.questions : [];
+    } else {
+        db = [];
+    }
+    renderDB();
+    renderTagSelect();
+});
+
+async function saveToFirestore(newData) {
+    try {
+        await setDoc(docRef, { questions: newData });
+    } catch (error) {
+        console.error("Error saving data:", error);
+    }
+}
+
+/* ================= UI 제어 (등록 시 O/X 상태 토글) ================= */
+const choiceO = document.getElementById("choiceO");
+const choiceX = document.getElementById("choiceX");
+choiceO.addEventListener("click", () => {
+    selectedAns = "O";
+    choiceO.classList.add("selected-o");
+    choiceX.classList.remove("selected-x");
+});
+choiceX.addEventListener("click", () => {
+    selectedAns = "X";
+    choiceX.classList.add("selected-x");
+    choiceO.classList.remove("selected-o");
+});
+choiceO.classList.add("selected-o");
+
+const editChoiceO = document.getElementById("editChoiceO");
+const editChoiceX = document.getElementById("editChoiceX");
+editChoiceO.addEventListener("click", () => {
+    editSelectedAns = "O";
+    editChoiceO.classList.add("selected-o");
+    editChoiceX.classList.remove("selected-x");
+});
+editChoiceX.addEventListener("click", () => {
+    editSelectedAns = "X";
+    editChoiceX.classList.add("selected-x");
+    editChoiceO.classList.remove("selected-o");
+});
+
+/* ================= タブ切り替え ================= */
+function showTab(tab) {
+    const dbArea = document.getElementById("dbArea");
+    const examArea = document.getElementById("examArea");
+    const btnDB = document.getElementById("btnDB");
+    const btnExam = document.getElementById("btnExam");
+
+    if (tab === "db") {
+        dbArea.classList.remove("hidden");
+        examArea.classList.add("hidden");
+        btnDB.classList.add("active");
+        btnExam.classList.remove("active");
+        document.getElementById("examCtrlArea").classList.add("hidden"); 
+    } else {
+        examArea.classList.remove("hidden");
+        dbArea.classList.add("hidden");
+        btnExam.classList.add("active");
+        btnDB.classList.remove("active");
+        renderTagSelect();
+        if (currentTest.length > 0) {
+            document.getElementById("examCtrlArea").classList.remove("hidden");
+        }
+    }
+}
+
+/* ================= データベース管理 ================= */
+function toggleDB() {
+    document.getElementById("dbView").classList.toggle("hidden");
+}
+
+function parseTags(tagStr) {
+    if (!tagStr) return [];
+    return tagStr.split(",").map(t => t.trim()).filter(t => t.length > 0);
+}
+
+function addQ() {
+    const question = document.getElementById("qText").value;
+    const note = document.getElementById("note").value;
+    const tagStr = document.getElementById("tags").value;
+
+    if (!question.trim()) return;
+    let tags = parseTags(tagStr);
+
+    db.push({
+        id: db.length + 1,
+        question,
+        answer: selectedAns,
+        note,
+        tags
+    });
+
+    saveToFirestore(db);
+
+    document.getElementById("qText").value = "";
+    document.getElementById("note").value = "";
+    document.getElementById("tags").value = "";
+}
+
+function deleteQ(index) {
+    if(!confirm("本当に削除しますか？")) return;
+    db.splice(index, 1);
+    db = db.map((q, i) => ({ ...q, id: i + 1 }));
+    saveToFirestore(db);
+}
+
+function openEditModal(index) {
+    editingIndex = index;
+    const q = db[index];
+    document.getElementById("editQText").value = q.question || "";
+    document.getElementById("editNote").value = q.note || "";
+    document.getElementById("editTags").value = q.tags ? q.tags.join(", ") : "";
+    
+    editSelectedAns = q.answer || "O";
+    if (editSelectedAns === "O") {
+        editChoiceO.classList.add("selected-o");
+        editChoiceX.classList.remove("selected-x");
+    } else {
+        editChoiceX.classList.add("selected-x");
+        editChoiceO.classList.remove("selected-o");
+    }
+    
+    document.getElementById("editModal").style.display = "flex";
+}
+
+function closeEditModal() {
+    document.getElementById("editModal").style.display = "none";
+    editingIndex = null;
+}
+
+function saveEdit() {
+    if (editingIndex === null) return;
+    const question = document.getElementById("editQText").value;
+    if (!question.trim()) return;
+
+    db[editingIndex].question = question;
+    db[editingIndex].note = document.getElementById("editNote").value;
+    db[editingIndex].answer = editSelectedAns;
+    db[editingIndex].tags = parseTags(document.getElementById("editTags").value);
+
+    saveToFirestore(db);
+    closeEditModal();
+}
+
+function renderDB() {
+    let html = "";
+    db.forEach((q, idx) => {
+        if (!q) return; 
+        let tagHtml = q.tags ? q.tags.map(t => `<span class="tag-badge">#${t}</span>`).join("") : "";
+        html += `
+        <div class="question">
+            <div style="float:right; display:flex; gap:5px;">
+                <button class="btn-edit-q" data-idx="${idx}" style="background:#f39c12; padding:5px 8px; font-size:12px; color:white; border:none; border-radius:4px; cursor:pointer; margin:0;">修正</button>
+                <button class="btn-delete" data-idx="${idx}" style="background:red; padding:5px 8px; font-size:12px; color:white; border:none; border-radius:4px; cursor:pointer; margin:0;">削除</button>
+            </div>
+            <span style="font-weight:bold; color:${q.answer === 'O' ? '#2d6cdf':'#d33'}">[正解: ${q.answer}]</span><br>
+            ${q.question}<br>
+            <small style="color:#555;">💡 ${q.note || ""}</small><br>
+            ${tagHtml}
+        </div>`;
+    });
+    document.getElementById("dbView").innerHTML = html;
+
+    document.querySelectorAll(".btn-delete").forEach(btn => {
+        btn.addEventListener("click", (e) => deleteQ(parseInt(e.target.getAttribute("data-idx"))));
+    });
+    document.querySelectorAll(".btn-edit-q").forEach(btn => {
+        btn.addEventListener("click", (e) => openEditModal(parseInt(e.target.getAttribute("data-idx"))));
+    });
+}
+
+function renderTagSelect() {
+    const select = document.getElementById("tagSelect");
+    const filteredDb = db.filter(q => q);
+    let tagCounts = {};
+    
+    filteredDb.forEach(q => {
+        if (q.tags && q.tags.length > 0) {
+            q.tags.forEach(t => {
+                tagCounts[t] = (tagCounts[t] || 0) + 1;
+            });
+        }
+    });
+
+    let html = `<option value="all">🌐 全体プール (${filteredDb.length}問)</option>`;
+    Object.keys(tagCounts).forEach(t => {
+        html += `<option value="${t}">#${t} (${tagCounts[t]}問)</option>`;
+    });
+    select.innerHTML = html;
+}
+
+/* ================= 試験生成 & シャッフル ================= */
+function shuffle(arr) {
+    let a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        let j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+function makeRandomTest() {
+    let n = parseInt(document.getElementById("count").value || "1");
+    const selectedTag = document.getElementById("tagSelect").value;
+    let pool = db.filter(q => q);
+
+    if (selectedTag !== "all") {
+        pool = pool.filter(q => q.tags && q.tags.includes(selectedTag));
+    }
+
+    if (pool.length === 0) {
+        alert("該当する問題がありません。");
+        return;
+    }
+
+    currentTest = shuffle(pool).slice(0, n);
+    userAnswers = {}; 
+    
+    let title = selectedTag === "all" ? `🎯 ランダムOX試験 [全体] (${currentTest.length}問)` : `🏷️ ランダムOX試験 [#${selectedTag}] (${currentTest.length}問)`;
+    renderExam(currentTest, title);
+    document.getElementById("examCtrlArea").classList.remove("hidden");
+}
+
+function renderExam(testData, title) {
+    let html = "";
+    html += `<div class="examSession"><div class="group-title" style="font-size:16px; margin-bottom:15px;">${title}</div>`;
+
+    testData.forEach((q, i) => {
+        html += `
+        <div class="question" id="q_box_${i}" style="border-left: 4px solid #7f8c8d;">
+            <b>Q${i + 1}.</b> ${q.question}
+            
+            <div class="exam-ox-actions">
+                <button class="btn-choice choice-o" data-qidx="${i}" data-ans="O">⭕</button>
+                <button class="btn-choice choice-x" data-qidx="${i}" data-ans="X">❌</button>
+            </div>
+            
+            <div id="res_box_${i}" class="hidden"></div>
+        </div>`;
+    });
+
+    html += `</div>`;
+    document.getElementById("examOut").innerHTML = html;
+
+    document.querySelectorAll(".btn-choice").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            const qIdx = parseInt(e.target.getAttribute("data-qidx"));
+            const chosen = e.target.getAttribute("data-ans");
+            handleSelectAnswer(qIdx, chosen);
+        });
+    });
+}
+
+function handleSelectAnswer(qIdx, chosen) {
+    if(userAnswers[qIdx] !== undefined) return;
+    
+    userAnswers[qIdx] = chosen;
+    const correctAns = currentTest[qIdx].answer;
+    const resBox = document.getElementById(`res_box_${qIdx}`);
+    const qBox = document.getElementById(`q_box_${qIdx}`);
+    
+    const buttons = qBox.querySelectorAll(".btn-choice");
+    buttons.forEach(btn => {
+        if(btn.getAttribute("data-ans") === chosen) {
+            btn.classList.add(chosen === "O" ? "active-o" : "active-x");
+        }
+    });
+
+    resBox.classList.remove("hidden");
+    if (chosen === correctAns) {
+        qBox.style.borderLeft = "4px solid #2cc391"; 
+        resBox.className = "ox-result-box correct";
+        resBox.innerHTML = `<b>正解！</b> (あなたの選択: ${chosen})<br><small style="color:#333;">💡 ${currentTest[qIdx].note || "解説がありません。"}</small>`;
+    } else {
+        qBox.style.borderLeft = "4px solid #ec7063"; 
+        resBox.className = "ox-result-box wrong";
+        resBox.innerHTML = `<b>不正解！</b> (あなたの選択: ${chosen} / 正解: ${correctAns})<br><small style="color:#333;">💡 ${currentTest[qIdx].note || "解説がありません。"}</small>`;
+    }
+}
+
+/* ================= 틀린 문제만 재출제 복습 기능 ================= */
+function retryWrongTests() {
+    let wrongQuestions = [];
+
+    currentTest.forEach((q, i) => {
+        let userAns = userAnswers[i];
+        if (userAns === undefined || userAns !== q.answer) {
+            wrongQuestions.push(q);
+        }
+    });
+
+    if (wrongQuestions.length > 0) {
+        currentTest = wrongQuestions;
+        userAnswers = {}; 
+        renderExam(currentTest, `🔁 誤答復習 OX試験 (${currentTest.length}問)`);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+        alert("間違えた問題がありません！満点です！");
+    }
+}
+
+/* ================= イベントリスナー ================= */
+document.getElementById("btnDB").addEventListener("click", () => showTab("db"));
+document.getElementById("btnExam").addEventListener("click", () => showTab("exam"));
+document.getElementById("btnToggleDB").addEventListener("click", toggleDB);
+document.getElementById("btnAddQ").addEventListener("click", addQ);
+document.getElementById("btnStartRandom").addEventListener("click", makeRandomTest);
+document.getElementById("btnRetryWrong").addEventListener("click", retryWrongTests);
+
+document.getElementById("btnCancelEdit").addEventListener("click", closeEditModal);
+document.getElementById("btnSaveEdit").addEventListener("click", saveEdit);
+
+</script>
+
+</body>
+</html>
