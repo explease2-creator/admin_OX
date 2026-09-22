@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>行政法 OX 短答式復習システム v1.0</title>
+<title>行政法 OX 短答式復習システム v1.1</title>
 
 <style>
 body {
@@ -170,6 +170,7 @@ button {
     padding: 10px;
     border-radius: 6px;
     font-size: 14px;
+    line-height: 1.6;
 }
 .ox-result-box.correct {
     background: #e8f8f5;
@@ -180,6 +181,22 @@ button {
     background: #fdf2f2;
     border-left: 4px solid #ec7063;
     color: #b03a2e;
+}
+
+/* 💡 서식 커스텀 스타일 (하이라이트, 굵은글씨 등) */
+mark {
+    background: linear-gradient(to top, #fff176 60%, transparent 40%);
+    color: #111;
+    font-weight: bold;
+    padding: 0 3px;
+    border-radius: 2px;
+}
+.hl-red, .hl-point {
+    background-color: #ffe0b2;
+    color: #e65100;
+    font-weight: bold;
+    padding: 2px 5px;
+    border-radius: 4px;
 }
 
 .hidden { display: none !important; }
@@ -254,7 +271,7 @@ small { color: gray; font-size: 12px; }
 
 <body>
 
-<div class="top">⚖️ 行政法 OX 短答式復習システム v1.0</div>
+<div class="top">⚖️ 行政法 OX 短答式復習システム v1.1</div>
 
 <div class="tab">
 <button id="btnDB" class="active">📚 データベース</button>
@@ -263,7 +280,7 @@ small { color: gray; font-size: 12px; }
 
 <div id="dbArea" class="card">
 <h3>📥 OX問題登録</h3>
-<textarea id="qText" rows="4" placeholder="問題の提示文・判例の該当部分を入力してください"></textarea>
+<textarea id="qText" rows="4" placeholder="問題の提示文・判例の該当部分を入力してください (改行対応)"></textarea>
 
 <span class="form-label">⭕ 正解の判定</span>
 <div class="ox-select-wrapper">
@@ -272,7 +289,7 @@ small { color: gray; font-size: 12px; }
 </div>
 
 <span class="form-label">💡 解説</span>
-<textarea id="note" rows="3" placeholder="正解・不正解判定の根拠となる解説文"></textarea>
+<textarea id="note" rows="3" placeholder="解説文を入力してください (<mark>強調</mark> や <b>太字</b> 使用可能)"></textarea>
 
 <span class="form-label">🏷️ タグ</span>
 <input id="tags" placeholder="タグ (カンマ(,)で複数入力可)">
@@ -351,6 +368,41 @@ let userAnswers = {};
 let selectedAns = "O"; 
 let editSelectedAns = "O";
 let editingIndex = null; 
+
+/* ================= 💡 텍스트 서식 및 줄바꿈 처리 함수 ================= */
+function escapeHtml(str) {
+    if(!str) return "";
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function formatText(str) {
+    if (!str) return "";
+    // 1. 보안을 위한 안전 이스케이프
+    let safe = escapeHtml(str);
+
+    // 2. 허용할 서식 태그 복원 (<mark>, <b>, <strong>, <i>, <u>, <span class="...">)
+    safe = safe.replace(/&lt;mark&gt;/gi, "<mark>")
+               .replace(/&lt;\/mark&gt;/gi, "</mark>")
+               .replace(/&lt;b&gt;/gi, "<b>")
+               .replace(/&lt;\/b&gt;/gi, "</b>")
+               .replace(/&lt;strong&gt;/gi, "<strong>")
+               .replace(/&lt;\/strong&gt;/gi, "</strong>")
+               .replace(/&lt;i&gt;/gi, "<i>")
+               .replace(/&lt;\/i&gt;/gi, "</i>")
+               .replace(/&lt;u&gt;/gi, "<u>")
+               .replace(/&lt;\/u&gt;/gi, "</u>")
+               .replace(/&lt;span class=&quot;(.*?)&quot;&gt;/gi, '<span class="$1">')
+               .replace(/&lt;span class='(.*?)'&gt;/gi, '<span class="$1">')
+               .replace(/&lt;\/span&gt;/gi, "</span>");
+
+    // 3. 개행문자(\n)를 HTML 줄바꿈(<br>)으로 변환
+    return safe.replace(/\n/g, "<br>");
+}
 
 onSnapshot(docRef, (docSnap) => {
     if (docSnap.exists()) {
@@ -506,7 +558,7 @@ function renderDB() {
     let html = "";
     db.forEach((q, idx) => {
         if (!q) return; 
-        let tagHtml = q.tags ? q.tags.map(t => `<span class="tag-badge">#${t}</span>`).join("") : "";
+        let tagHtml = q.tags ? q.tags.map(t => `<span class="tag-badge">#${escapeHtml(t)}</span>`).join("") : "";
         html += `
         <div class="question">
             <div style="float:right; display:flex; gap:5px;">
@@ -514,8 +566,8 @@ function renderDB() {
                 <button class="btn-delete" data-idx="${idx}" style="background:red; padding:5px 8px; font-size:12px; color:white; border:none; border-radius:4px; cursor:pointer; margin:0;">削除</button>
             </div>
             <span style="font-weight:bold; color:${q.answer === 'O' ? '#2d6cdf':'#d33'}">[正解: ${q.answer}]</span><br>
-            ${q.question}<br>
-            <small style="color:#555;">💡 ${q.note || ""}</small><br>
+            ${formatText(q.question)}<br>
+            <small style="color:#555;">💡 ${formatText(q.note || "")}</small><br>
             ${tagHtml}
         </div>`;
     });
@@ -544,7 +596,7 @@ function renderTagSelect() {
 
     let html = `<option value="all">🌐 全体プール (${filteredDb.length}問)</option>`;
     Object.keys(tagCounts).forEach(t => {
-        html += `<option value="${t}">#${t} (${tagCounts[t]}問)</option>`;
+        html += `<option value="${escapeHtml(t)}">#${escapeHtml(t)} (${tagCounts[t]}問)</option>`;
     });
     select.innerHTML = html;
 }
@@ -576,7 +628,7 @@ function makeRandomTest() {
     currentTest = shuffle(pool).slice(0, n);
     userAnswers = {}; 
     
-    let title = selectedTag === "all" ? `🎯 ランダムOX試験 [全体] (${currentTest.length}問)` : `🏷️ ランダムOX試験 [#${selectedTag}] (${currentTest.length}問)`;
+    let title = selectedTag === "all" ? `🎯 ランダムOX試験 [全体] (${currentTest.length}問)` : `🏷️ ランダムOX試験 [#${escapeHtml(selectedTag)}] (${currentTest.length}問)`;
     renderExam(currentTest, title);
     document.getElementById("examCtrlArea").classList.remove("hidden");
 }
@@ -588,7 +640,7 @@ function renderExam(testData, title) {
     testData.forEach((q, i) => {
         html += `
         <div class="question" id="q_box_${i}" style="border-left: 4px solid #7f8c8d;">
-            <b>Q${i + 1}.</b> ${q.question}
+            <b>Q${i + 1}.</b><br>${formatText(q.question)}
             
             <div class="exam-ox-actions">
                 <button class="btn-choice choice-o" data-qidx="${i}" data-ans="O">⭕</button>
@@ -627,14 +679,16 @@ function handleSelectAnswer(qIdx, chosen) {
     });
 
     resBox.classList.remove("hidden");
+    const formattedNote = currentTest[qIdx].note ? formatText(currentTest[qIdx].note) : "解説がありません。";
+
     if (chosen === correctAns) {
         qBox.style.borderLeft = "4px solid #2cc391"; 
         resBox.className = "ox-result-box correct";
-        resBox.innerHTML = `<b>正解！</b> (あなたの選択: ${chosen})<br><small style="color:#333;">💡 ${currentTest[qIdx].note || "解説がありません。"}</small>`;
+        resBox.innerHTML = `<b>正解！</b> (あなたの選択: ${chosen})<br><small style="color:#333;">💡 ${formattedNote}</small>`;
     } else {
         qBox.style.borderLeft = "4px solid #ec7063"; 
         resBox.className = "ox-result-box wrong";
-        resBox.innerHTML = `<b>不正解！</b> (あなたの選択: ${chosen} / 正解: ${correctAns})<br><small style="color:#333;">💡 ${currentTest[qIdx].note || "解説がありません。"}</small>`;
+        resBox.innerHTML = `<b>不正解！</b> (あなたの選択: ${chosen} / 正解: ${correctAns})<br><small style="color:#333;">💡 ${formattedNote}</small>`;
     }
 }
 
