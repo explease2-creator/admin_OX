@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>行政法 OX 短答式復習システム v1.1</title>
+<title>法学 OX 短答式復習システム v2.0</title>
 
 <style>
 body {
@@ -21,6 +21,37 @@ body {
     margin-bottom: 10px;
 }
 
+/* 🏛️ 최상위 과목 선택 탭 */
+.subject-tab {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    background: #e2e8f0;
+    padding: 5px;
+    border-radius: 10px;
+    overflow-x: auto;
+}
+
+.subject-tab button {
+    flex: 1;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: #4a5568;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    white-space: nowrap;
+    margin-top: 0;
+}
+
+.subject-tab button.active {
+    background: #2c3e50;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
 /* 카드 */
 .card {
     background: white;
@@ -30,7 +61,7 @@ body {
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
-/* タブ */
+/* 기능 탭 (DB / 試験) */
 .tab {
     display: flex;
     gap: 8px;
@@ -46,6 +77,7 @@ body {
     font-size: 14px;
     font-weight: bold;
     cursor: pointer;
+    margin-top: 0;
 }
 
 .tab button.active {
@@ -271,7 +303,16 @@ small { color: gray; font-size: 12px; }
 
 <body>
 
-<div class="top">⚖️ 行政法 OX 短答式復習システム v1.1</div>
+<div class="top">⚖️ 法学 OX 短答式復習システム v2.0</div>
+
+<!-- 🏛️ 과목 선택 최상위 탭 (추가하고 싶은 과목 버튼을 여기에 자유롭게 더 넣으실 수 있습니다) -->
+<div class="subject-tab">
+    <button class="btn-subject active" data-subject="constitution" data-title="日本国憲法">📜 憲法</button>
+    <button class="btn-subject" data-subject="admin" data-title="行政法">🏛️ 行政法</button>
+    <!-- 예시: 민법, 형법 등을 확장할 때 아래 주석을 풀어 버튼만 추가하면 됩니다 -->
+    <!-- <button class="btn-subject" data-subject="civil" data-title="民法">📘 民法</button> -->
+    <!-- <button class="btn-subject" data-subject="penal" data-title="刑法">📕 刑法</button> -->
+</div>
 
 <div class="tab">
 <button id="btnDB" class="active">📚 データベース</button>
@@ -279,7 +320,7 @@ small { color: gray; font-size: 12px; }
 </div>
 
 <div id="dbArea" class="card">
-<h3>📥 OX問題登録</h3>
+<h3 id="dbTitle">📥 [日本国憲法] OX問題登録</h3>
 <textarea id="qText" rows="4" placeholder="問題の提示文・判例の該当部分を入力してください (改行対応)"></textarea>
 
 <span class="form-label">⭕ 正解の判定</span>
@@ -301,7 +342,7 @@ small { color: gray; font-size: 12px; }
 </div>
 
 <div id="examArea" class="card hidden">
-<h3>🎯 試験作成</h3>
+<h3 id="examTitle">🎯 [日本国憲法] 試験作成</h3>
 
 <div id="randomMode">
     <span class="form-label">🎯 出題範囲 (タグ選択)</span>
@@ -359,8 +400,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const dbInstance = getFirestore(app);
 
-/* 💡 행정법 OX 전용 데이터베이스 문서 경로 */
-const docRef = doc(dbInstance, "admin_exam", "admin_ox_db_doc");
+/* ================= 🏛️ 과목 상태 및 Firestore 연결 관리 ================= */
+let currentSubject = "constitution"; // 기본값: 헌법
+let currentSubjectTitle = "日本国憲法";
+let docRef = null;
+let unsubscribeDoc = null;
 
 let db = []; 
 let currentTest = [];
@@ -368,6 +412,42 @@ let userAnswers = {};
 let selectedAns = "O"; 
 let editSelectedAns = "O";
 let editingIndex = null; 
+
+// 과목 변경 시 DB 리스너 동적 연결
+function switchSubject(subjectKey, subjectTitle) {
+    currentSubject = subjectKey;
+    currentSubjectTitle = subjectTitle;
+
+    // 제목 업데이트
+    document.getElementById("dbTitle").textContent = `📥 [${currentSubjectTitle}] OX問題登録`;
+    document.getElementById("examTitle").textContent = `🎯 [${currentSubjectTitle}] 試験作成`;
+
+    // 이전 리스너 해제
+    if (unsubscribeDoc) {
+        unsubscribeDoc();
+    }
+
+    // 과목별 통합 컬렉션("exam_db") 안의 과목별 문서 경로 설정
+    docRef = doc(dbInstance, "exam_db", currentSubject);
+
+    // 진행 중인 시험 상태 초기화
+    currentTest = [];
+    userAnswers = {};
+    document.getElementById("examOut").innerHTML = "";
+    document.getElementById("examCtrlArea").classList.add("hidden");
+
+    // 새 과목 DB 리스닝 시작
+    unsubscribeDoc = onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            db = data.questions ? data.questions : [];
+        } else {
+            db = [];
+        }
+        renderDB();
+        renderTagSelect();
+    });
+}
 
 /* ================= 💡 텍스트 서식 및 줄바꿈 처리 함수 ================= */
 function escapeHtml(str) {
@@ -382,10 +462,8 @@ function escapeHtml(str) {
 
 function formatText(str) {
     if (!str) return "";
-    // 1. 보안을 위한 안전 이스케이프
     let safe = escapeHtml(str);
 
-    // 2. 허용할 서식 태그 복원 (<mark>, <b>, <strong>, <i>, <u>, <span class="...">)
     safe = safe.replace(/&lt;mark&gt;/gi, "<mark>")
                .replace(/&lt;\/mark&gt;/gi, "</mark>")
                .replace(/&lt;b&gt;/gi, "<b>")
@@ -400,20 +478,8 @@ function formatText(str) {
                .replace(/&lt;span class='(.*?)'&gt;/gi, '<span class="$1">')
                .replace(/&lt;\/span&gt;/gi, "</span>");
 
-    // 3. 개행문자(\n)를 HTML 줄바꿈(<br>)으로 변환
     return safe.replace(/\n/g, "<br>");
 }
-
-onSnapshot(docRef, (docSnap) => {
-    if (docSnap.exists()) {
-        const data = docSnap.data();
-        db = data.questions ? data.questions : [];
-    } else {
-        db = [];
-    }
-    renderDB();
-    renderTagSelect();
-});
 
 async function saveToFirestore(newData) {
     try {
@@ -451,7 +517,20 @@ editChoiceX.addEventListener("click", () => {
     editChoiceO.classList.remove("selected-o");
 });
 
-/* ================= タブ切り替え ================= */
+/* ================= 🏛️ 과목 탭 전환 이벤트 ================= */
+document.querySelectorAll(".btn-subject").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+        document.querySelectorAll(".btn-subject").forEach(b => b.classList.remove("active"));
+        const targetBtn = e.target.closest(".btn-subject");
+        targetBtn.classList.add("active");
+        
+        const subj = targetBtn.getAttribute("data-subject");
+        const title = targetBtn.getAttribute("data-title");
+        switchSubject(subj, title);
+    });
+});
+
+/* ================= 機能 タブ切り替え ================= */
 function showTab(tab) {
     const dbArea = document.getElementById("dbArea");
     const examArea = document.getElementById("examArea");
@@ -628,7 +707,10 @@ function makeRandomTest() {
     currentTest = shuffle(pool).slice(0, n);
     userAnswers = {}; 
     
-    let title = selectedTag === "all" ? `🎯 ランダムOX試験 [全体] (${currentTest.length}問)` : `🏷️ ランダムOX試験 [#${escapeHtml(selectedTag)}] (${currentTest.length}問)`;
+    let title = selectedTag === "all" 
+        ? `🎯 [${currentSubjectTitle}] ランダムOX試験 [全体] (${currentTest.length}問)` 
+        : `🏷️ [${currentSubjectTitle}] ランダムOX試験 [#${escapeHtml(selectedTag)}] (${currentTest.length}問)`;
+    
     renderExam(currentTest, title);
     document.getElementById("examCtrlArea").classList.remove("hidden");
 }
@@ -706,7 +788,7 @@ function retryWrongTests() {
     if (wrongQuestions.length > 0) {
         currentTest = wrongQuestions;
         userAnswers = {}; 
-        renderExam(currentTest, `🔁 誤答復習 OX試験 (${currentTest.length}問)`);
+        renderExam(currentTest, `🔁 [${currentSubjectTitle}] 誤答復習 OX試験 (${currentTest.length}問)`);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
         alert("間違えた問題がありません！満点です！");
@@ -723,6 +805,9 @@ document.getElementById("btnRetryWrong").addEventListener("click", retryWrongTes
 
 document.getElementById("btnCancelEdit").addEventListener("click", closeEditModal);
 document.getElementById("btnSaveEdit").addEventListener("click", saveEdit);
+
+// 🚀 초기 실행: 기본 과목(헌법) 로드
+switchSubject("constitution", "日本国憲法");
 
 </script>
 
