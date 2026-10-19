@@ -8,7 +8,7 @@
 <style>
 body {
     font-family: -apple-system, "Helvetica Neue", "Segoe UI", sans-serif;
-    background: #fdf5f7; /* 배경색도 아주 연한 핑크빛 톤으로 살짝 수정 */
+    background: #fdf5f7;
     margin: 0;
     padding: 15px;
     padding-bottom: 90px; 
@@ -27,7 +27,7 @@ body {
     display: flex;
     gap: 6px;
     margin-bottom: 12px;
-    background: #fce4ec; /* 연한 핑크 배경 */
+    background: #fce4ec; 
     padding: 6px;
     border-radius: 10px;
     overflow-x: auto;
@@ -44,7 +44,7 @@ body {
     border: none;
     border-radius: 7px;
     background: transparent;
-    color: #6a4f5b; /* 핑크 톤에 맞는 텍스트 색상 */
+    color: #6a4f5b; 
     font-size: 13px;
     font-weight: bold;
     cursor: pointer;
@@ -53,7 +53,7 @@ body {
 }
 
 .subject-tab button.active {
-    background: #c2185b; /* 다크 핑크 (선택된 과목) */
+    background: #c2185b; 
     color: white;
     box-shadow: 0 2px 5px rgba(194, 24, 91, 0.25);
 }
@@ -88,7 +88,7 @@ body {
 }
 
 .tab button.active {
-    background: #e91e63; /* 메인 핑크 컬러 */
+    background: #e91e63; 
     color: white;
 }
 
@@ -116,7 +116,7 @@ button {
     margin-top: 8px;
     border: none;
     border-radius: 8px;
-    background: #e91e63; /* 메인 핑크 버튼 */
+    background: #e91e63; 
     color: white;
     font-size: 15px;
     font-weight: bold;
@@ -155,7 +155,7 @@ button {
 /* 問題表示 */
 .question {
     padding: 12px;
-    border-left: 4px solid #e91e63; /* 메인 핑크 포인트바 */
+    border-left: 4px solid #e91e63; 
     background: #fafafa;
     margin-top: 12px;
     font-size: 15px;
@@ -165,8 +165,8 @@ button {
 
 .tag-badge {
     display: inline-block;
-    background: #fce4ec; /* 연한 핑크 배경 */
-    color: #e91e63; /* 핑크 텍스트 */
+    background: #fce4ec; 
+    color: #e91e63; 
     font-size: 11px;
     padding: 3px 8px;
     border-radius: 12px;
@@ -193,7 +193,7 @@ button {
     cursor: pointer;
 }
 .btn-choice.active-o {
-    background: #e91e63 !important; /* 선택 시 메인 핑크 */
+    background: #e91e63 !important; 
     color: white !important;
     border-color: #e91e63;
 }
@@ -251,7 +251,7 @@ small { color: gray; font-size: 12px; }
 .group-title {
     font-weight: bold;
     font-size: 15px;
-    color: #e91e63; /* 그룹 타이틀 핑크 */
+    color: #e91e63; 
     margin-bottom: 5px;
 }
 
@@ -690,9 +690,12 @@ function renderTagSelect() {
     });
 
     let html = `<option value="all">🌐 全体プール (${filteredDb.length}問)</option>`;
-    Object.keys(tagCounts).forEach(t => {
+    
+    // 💡 태그 이름순 정렬 적용 부분
+    Object.keys(tagCounts).sort((a, b) => a.localeCompare(b, 'ja')).forEach(t => {
         html += `<option value="${escapeHtml(t)}">#${escapeHtml(t)} (${tagCounts[t]}問)</option>`;
     });
+    
     select.innerHTML = html;
 }
 
